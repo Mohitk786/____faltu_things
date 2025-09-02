@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String?
+  phone          String?   @unique
+  name           String
+  role           Role      @default(TENANT)
+  isVerified     Boolean   @default(false)
+  otpEnabled     Boolean   @default(false)
+  isSuspended    Boolean   @default(false)
+
+  emailVerified  DateTime?
+  image          String?   
+
+  accounts       Account[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  Staff Staff[]
+
+  PGAdmin PGAdmin[]
+
+  Tenant Tenant[]
+}
+
+model Account {
+  id                 String   @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+
+enum Role {
+SUPER_ADMIN
+PG_ADMIN
+STAFF
+TENANT
+}
+
+
+model Plan {
+id               String       @id @default(cuid())
+name             String       @unique
+description      String?
+price            Int          
+durationInMonths Int          @default(1)
+maxProperties    Int?         
+maxTenants       Int?        
+features         String[]     @default([])
+isFreeTrial      Boolean      @default(false)
+
+// Relationships
+subscriptions    Subscription[]
+
+@@map("plans")
+}
+
+// Tracks the subscription status for each PGAdmin.
+model Subscription {
+id               String   @id @default(cuid())
+pgAdminId        String   @unique
+planId           String
+startDate        DateTime @default(now())
+endDate          DateTime
+isActive         Boolean  @default(true)
+isTrial          Boolean  @default(false)
+
+// Foreign keys and relationships
+pgAdmin          PGAdmin      @relation(fields: [pgAdminId], references: [id])
+plan             Plan         @relation(fields: [planId], references: [id])
+
+@@map("subscriptions")
+}
+
+// =========================================================================
+// PG/Hostel Management Models (PG Admin's domain)
+// =========================================================================
+
+// Represents a PG/Hostel owner.
+model PGAdmin {
+id               String        @id @default(cuid())
+userId           String        @unique
+propertyName     String
+address          String
+// Relationship to the User model
+user             User          @relation(fields: [userId], references: [id])
+// Relationships to properties and subscription
+properties       Property[]
+subscription     Subscription?
+
+// System
+createdAt        DateTime      @default(now())
+updatedAt        DateTime      @updatedAt
+
+@@map("pg_admins")
+}
+
+// Represents a single PG/Hostel property.
+model Property {
+id               String        @id @default(cuid())
+pgAdminId        String
+name             String
+address          String
+totalBeds        Int           @default(0)
+totalRooms       Int           @default(0)
+
+pgAdmin          PGAdmin       @relation(fields: [pgAdminId], references: [id])
+tenants          Tenant[]
+staff            Staff[]
+announcements    Announcement[]
+visitors         Visitor[]
+
+// System
+createdAt        DateTime      @default(now())
+updatedAt        DateTime      @updatedAt
+
+@@map("properties")
+}
+
+model Staff {
+id               String   @id @default(cuid())
+userId           String   @unique
+propertyId       String?  
+user             User     @relation(fields: [userId], references: [id])
+property         Property? @relation(fields: [propertyId], references: [id])
+
+createdAt        DateTime @default(now())
+updatedAt        DateTime @updatedAt
+
+@@map("staff")
+}
+
+// Represents a Tenant or Student.
+model Tenant {
+id               String        @id @default(cuid())
+userId           String        @unique
+propertyId       String
+roomNumber       String
+bedNumber        String?
+checkInDate      DateTime
+checkOutDate     DateTime?
+rent             Int
+deposit          Int
+isCurrentlyRented Boolean      @default(true)
+
+// Profile details
+gender           String?
+age              Int?
+aadhaarId        String?
+emergencyContact String?
+
+// Relationships
+user             User          @relation(fields: [userId], references: [id])
+property         Property      @relation(fields: [propertyId], references: [id])
+complaints       Complaint[]
+tenantRents      TenantRent[]
+visitors         Visitor[]
+
+// System
+createdAt        DateTime      @default(now())
+updatedAt        DateTime      @updatedAt
+
+@@map("tenants")
+}
+
+// =========================================================================
+// Feature-Specific Models
+// =========================================================================
+
+// Tracks rent and payments for each tenant.
+model TenantRent {
+id               String   @id @default(cuid())
+tenantId         String
+month            DateTime // Store the first day of the month for easy tracking
+rentAmount       Int
+isPaid           Boolean  @default(false)
+paymentDate      DateTime?
+lateFee          Int      @default(0)
+
+// Relationships
+tenant           Tenant   @relation(fields: [tenantId], references: [id])
+
+// System
+createdAt        DateTime @default(now())
+updatedAt        DateTime @updatedAt
+
+@@map("tenant_rents")
+}
+
+// Represents a complaint ticket.
+model Complaint {
+id               String   @id @default(cuid())
+tenantId         String
+category         String
+description      String   @db.Text
+photoUrl         String?
+status           ComplaintStatus @default(PENDING)
+assignedToStaffId String?
+resolution       String?  @db.Text
+
+// Relationships
+tenant           Tenant   @relation(fields: [tenantId], references: [id])
+// assignedTo       Staff?   @relation(fields: [assignedToStaffId], references: [id])
+
+// System
+createdAt        DateTime @default(now())
+updatedAt        DateTime @updatedAt
+
+@@map("complaints")
+}
+
+enum ComplaintStatus {
+PENDING
+IN_PROGRESS
+RESOLVED
+}
+
+// Represents an announcement or notice.
+model Announcement {
+id               String   @id @default(cuid())
+propertyId       String
+title            String
+content          String   @db.Text
+
+// Relationships
+property         Property @relation(fields: [propertyId], references: [id])
+
+// System
+createdAt        DateTime @default(now())
+updatedAt        DateTime @updatedAt
+
+@@map("announcements")
+}
+
+// Logs visitor entry and exit.
+model Visitor {
+id               String   @id @default(cuid())
+propertyId       String
+hostTenantId     String?
+name             String
+idProof          String
+purpose          String?
+checkInTime      DateTime
+checkOutTime     DateTime?
+
+// Relationships
+property         Property @relation(fields: [propertyId], references: [id])
+hostTenant       Tenant?   @relation(fields: [hostTenantId], references: [id])
+
+// System
+createdAt        DateTime @default(now())
+updatedAt        DateTime @updatedAt
+
+@@map("visitors")
+}

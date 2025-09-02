@@ -1,0 +1,143 @@
+/* Example CSS file showing how to use CSS variables from globals.css */
+
+.custom-styled-component {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing);
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-md);
+}
+
+.custom-styled-component h2 {
+  color: var(--accent);
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-wide);
+}
+
+.custom-styled-component p {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* Button component using your variables */
+.custom-button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: calc(var(--spacing) * 2) calc(var(--spacing) * 4);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.custom-button:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.custom-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card component */
+.custom-card {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: calc(var(--spacing) * 3);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.custom-card:hover {
+  box-shadow: var(--shadow-xl);
+  border-color: var(--ring);
+}
+
+/* Input component */
+.custom-input {
+  background-color: var(--input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--spacing) * 2);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: border-color 0.2s ease;
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Alert component */
+.custom-alert {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius);
+  padding: calc(var(--spacing) * 2);
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Success variant */
+.custom-alert.success {
+  background-color: var(--chart-2);
+  color: var(--background);
+  border-color: var(--chart-2);
+}
+
+/* Warning variant */
+.custom-alert.warning {
+  background-color: var(--chart-3);
+  color: var(--background);
+  border-color: var(--chart-3);
+}
+
+/* Using your spacing and typography variables */
+.text-tight {
+  letter-spacing: var(--tracking-tight);
+}
+
+.text-wide {
+  letter-spacing: var(--tracking-wide);
+}
+
+.text-wider {
+  letter-spacing: var(--tracking-wider);
+}
+
+.spacing-sm {
+  padding: var(--spacing);
+}
+
+.spacing-md {
+  padding: calc(var(--spacing) * 2);
+}
+
+.spacing-lg {
+  padding: calc(var(--spacing) * 3);
+}
+
+/* Dark mode specific styles */
+@media (prefers-color-scheme: dark) {
+  .custom-card {
+    background-color: var(--card);
+    border-color: var(--border);
+  }
+  
+  .custom-input {
+    background-color: var(--input);
+    border-color: var(--border);
+  }
+}
